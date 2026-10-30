@@ -1,0 +1,161 @@
+# ==============================================================================
+# NOXiden IDE - Comprehensive .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Agent Artifacts & Downloaded Skills
+# ------------------------------------------------------------------------------
+.agents/*
+!.agents/rules/
+.system_generated/
+scratch/
+brain/
+
+# ------------------------------------------------------------------------------
+# Rust & Native Core
+# ------------------------------------------------------------------------------
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock.backup
+
+# ------------------------------------------------------------------------------
+# Node, TypeScript & Desktop Frontend
+# ------------------------------------------------------------------------------
+node_modules/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ------------------------------------------------------------------------------
+# Desktop Packaging & Platform Binaries
+# ------------------------------------------------------------------------------
+# Windows
+*.exe
+*.msi
+*.dll
+*.obj
+*.lib
+*.exp
+*.ilk
+
+# macOS
+*.dmg
+*.pkg
+*.app/
+*.dylib
+
+# Linux
+*.deb
+*.AppImage
+*.rpm
+*.so
+
+# Tauri / Electron packager outputs & caches
+src-tauri/target/
+release-builds/
+dist-electron/
+GPUCache/
+Crashpad/
+blob_storage/
+Session Storage/
+
+# ------------------------------------------------------------------------------
+# Python, PyTorch & LLM Fine-Tuning
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Model weights, checkpoints & datasets (Local GPU / Hugging Face)
+checkpoints/
+runs/
+wandb/
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.onnx
+*.gguf
+*.gqa
+huggingface_cache/
+hf_cache/
+datasets_cache/
+
+# ------------------------------------------------------------------------------
+# Testing, Coverage & Profiling
+# ------------------------------------------------------------------------------
+coverage/
+.nyc_output/
+test-results/
+tests/fixtures/
+fixtures/
+.coverage
+.coverage.*
+*.lcov
+htmlcov/
+.pytest_cache/
+.vite/
+.vitest/
+
+# ------------------------------------------------------------------------------
+# Secrets, Environment & Credentials
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+credentials.json
+auth.json
+secrets.yaml
+
+# ------------------------------------------------------------------------------
+# OS & System Files
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------------------------
+# IDE & Editor Configurations
+# ------------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~

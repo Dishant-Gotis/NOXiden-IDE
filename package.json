@@ -1,0 +1,30 @@
+{
+  "name": "noxiden-ide",
+  "version": "0.1.0",
+  "description": "NOXiden IDE — Installable Native Desktop Development Environment with Integrated Agentic Coding",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "copy:renderer": "node -e \"const fs = require('fs'); fs.mkdirSync('dist/renderer', {recursive:true}); fs.copyFileSync('src/renderer/index.html', 'dist/renderer/index.html'); fs.copyFileSync('src/renderer/renderer.js', 'dist/renderer/renderer.js');\"",
+    "build": "npm run build:main && npm run build:preload && npm run copy:renderer",
+    "start": "electron .",
+    "test": "node --test tests/**/*.test.js"
+  },
+  "keywords": [
+    "ide",
+    "desktop",
+    "ai-coding",
+    "agentic-ide",
+    "local-models",
+    "huggingface",
+    "electron"
+  ],
+  "author": "NOXiden Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "electron": "^24.22.1",
+    "typescript": "^5.7.2"
+  }
+}
