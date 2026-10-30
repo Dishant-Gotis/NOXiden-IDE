@@ -1,52 +1,271 @@
 // NOXiden Renderer Client Script
-// Interacts with Main process via window.noxiden (secure contextBridge)
+// Full Monaco Editor & Side-by-Side Diff Review Engine
 
+let normalEditor = null;
+let diffEditor = null;
 let currentWorkspacePath = null;
 let activeFilePath = null;
+let activeDiffFilePath = null;
+let isSideBySide = true;
 const messages = [];
 
 // DOM Elements
+const editorContainer = document.getElementById('editorContainer');
+const diffReviewContainer = document.getElementById('diffReviewContainer');
+const diffEditorWrapper = document.getElementById('diffEditorWrapper');
+const diffFileName = document.getElementById('diffFileName');
+const btnAcceptDiff = document.getElementById('btnAcceptDiff');
+const btnRejectDiff = document.getElementById('btnRejectDiff');
+const btnToggleSideBySide = document.getElementById('btnToggleSideBySide');
+const btnTestDiff = document.getElementById('btnTestDiff');
+
 const btnOpenWorkspace = document.getElementById('btnOpenWorkspace');
 const workspaceLabel = document.getElementById('workspaceLabel');
 const fileTree = document.getElementById('fileTree');
 const fileCount = document.getElementById('fileCount');
 const activeTabLabel = document.getElementById('activeTabLabel');
-const codeEditor = document.getElementById('codeEditor');
-const lineNumbers = document.getElementById('lineNumbers');
 const modelSelect = document.getElementById('modelSelect');
 const chatHistory = document.getElementById('chatHistory');
 const agentInput = document.getElementById('agentInput');
 const btnSendPrompt = document.getElementById('btnSendPrompt');
 const footerStatus = document.getElementById('footerStatus');
 
-// Update line numbers on input
-function updateLineNumbers() {
-  const lines = codeEditor.value.split('\n').length;
-  let numbers = '';
-  for (let i = 1; i <= Math.max(lines, 20); i++) {
-    numbers += `${i}<br>`;
-  }
-  lineNumbers.innerHTML = numbers;
+// Language detector
+function detectLanguage(filePath) {
+  if (!filePath) return 'plaintext';
+  const ext = filePath.split('.').pop().toLowerCase();
+  const map = {
+    rs: 'rust',
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    json: 'json',
+    py: 'python',
+    md: 'markdown',
+    html: 'html',
+    css: 'css',
+    scss: 'scss',
+    yaml: 'yaml',
+    yml: 'yaml',
+    sh: 'shell',
+    ps1: 'powershell',
+    sql: 'sql',
+    toml: 'ini'
+  };
+  return map[ext] || 'plaintext';
 }
 
-codeEditor.addEventListener('input', updateLineNumbers);
-updateLineNumbers();
+// Initial default content
+const initialWelcomeText = `# Welcome to NOXiden IDE
 
-// Auto-save on Ctrl+S
+NOXiden is an installable native desktop development environment built for local-first autonomy and high-performance pairing.
+
+### Core Capabilities
+- **Monaco Engine:** Native syntax parsing, tokenization, and code navigation.
+- **Side-by-Side Diff Review:** Inspect and approve AI agent edits before touching disk.
+- **Provider Agnostic:** Local GPU inference (Ollama / custom fine-tuned model) + Cloud fallback.
+- **Workspace Security:** Safe sandboxed filesystem boundaries.
+
+Use "Open Folder" in the top bar to inspect your project.
+`;
+
+// Initialize Monaco Editor via AMD loader
+require.config({ paths: { vs: './vs' } });
+
+require(['vs/editor/editor.main'], function () {
+  // Define custom dark theme matching NOXiden design tokens
+  monaco.editor.defineTheme('noxiden-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
+      { token: 'keyword', foreground: 'c084fc', fontStyle: 'bold' },
+      { token: 'string', foreground: '34d399' },
+      { token: 'number', foreground: 'f59e0b' },
+      { token: 'type', foreground: '38bdf8' }
+    ],
+    colors: {
+      'editor.background': '#161622',
+      'editor.foreground': '#f1f5f9',
+      'editorCursor.foreground': '#6366f1',
+      'editor.lineHighlightBackground': '#1e1e2f',
+      'editorLineNumber.foreground': '#475569',
+      'editorLineNumber.activeForeground': '#94a3b8',
+      'editor.selectionBackground': '#3730a3',
+      'diffEditor.insertedTextBackground': '#10b98125',
+      'diffEditor.removedTextBackground': '#ef444425'
+    }
+  });
+
+  // Standard Editor
+  normalEditor = monaco.editor.create(editorContainer, {
+    value: initialWelcomeText,
+    language: 'markdown',
+    theme: 'noxiden-dark',
+    automaticLayout: true,
+    fontSize: 13,
+    fontFamily: "'Consolas', 'Fira Code', 'Cascadia Code', monospace",
+    minimap: { enabled: true },
+    scrollBeyondLastLine: false,
+    tabSize: 2,
+    renderLineHighlight: 'all'
+  });
+
+  // Side-by-Side Diff Editor
+  diffEditor = monaco.editor.createDiffEditor(diffEditorWrapper, {
+    enableSplitViewResizing: true,
+    renderSideBySide: true,
+    theme: 'noxiden-dark',
+    automaticLayout: true,
+    readOnly: false,
+    originalEditable: false,
+    fontSize: 13,
+    fontFamily: "'Consolas', 'Fira Code', 'Cascadia Code', monospace"
+  });
+
+  footerStatus.innerText = 'Monaco Core Initialized';
+});
+
+// Save on Ctrl+S / Cmd+S
 window.addEventListener('keydown', async (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
-    if (activeFilePath && window.noxiden) {
+    if (activeFilePath && normalEditor && window.noxiden) {
       footerStatus.innerText = 'Saving...';
-      const res = await window.noxiden.writeFile(activeFilePath, codeEditor.value);
+      const content = normalEditor.getValue();
+      const res = await window.noxiden.writeFile(activeFilePath, content);
       if (res.success) {
-        footerStatus.innerText = `Saved: ${activeFilePath}`;
+        footerStatus.innerText = `Saved: ${activeFilePath.split(/[\\/]/).pop()}`;
         setTimeout(() => (footerStatus.innerText = 'Ready'), 2000);
       } else {
         footerStatus.innerText = `Save Failed: ${res.error}`;
       }
     }
   }
+});
+
+// Open File in Standard Editor
+async function openFile(filePath, fileName) {
+  if (!window.noxiden || !normalEditor) return;
+  try {
+    closeDiffReview();
+    footerStatus.innerText = `Loading ${fileName}...`;
+    const content = await window.noxiden.readFile(filePath);
+    const lang = detectLanguage(filePath);
+    
+    // Dispose previous model if needed
+    const oldModel = normalEditor.getModel();
+    const newModel = monaco.editor.createModel(content, lang);
+    normalEditor.setModel(newModel);
+    if (oldModel) oldModel.dispose();
+
+    activeFilePath = filePath;
+    activeTabLabel.innerText = fileName;
+    footerStatus.innerText = `Viewing: ${fileName} (${lang})`;
+  } catch (err) {
+    footerStatus.innerText = `Error: ${err.message}`;
+  }
+}
+
+// Side-by-Side Diff Review Functions
+function openDiffReview(filePath, originalCode, proposedCode) {
+  if (!diffEditor) return;
+
+  activeDiffFilePath = filePath;
+  diffFileName.innerText = filePath.split(/[\\/]/).pop();
+
+  editorContainer.style.display = 'none';
+  diffReviewContainer.style.display = 'flex';
+
+  const lang = detectLanguage(filePath);
+  const originalModel = monaco.editor.createModel(originalCode, lang);
+  const modifiedModel = monaco.editor.createModel(proposedCode, lang);
+
+  diffEditor.setModel({
+    original: originalModel,
+    modified: modifiedModel
+  });
+
+  footerStatus.innerText = `Reviewing Diff: ${filePath}`;
+}
+
+function closeDiffReview() {
+  diffReviewContainer.style.display = 'none';
+  editorContainer.style.display = 'block';
+  activeDiffFilePath = null;
+  if (normalEditor) {
+    normalEditor.layout();
+  }
+  footerStatus.innerText = 'Ready';
+}
+
+// Accept and Apply Diff
+btnAcceptDiff.addEventListener('click', async () => {
+  if (!activeDiffFilePath || !diffEditor || !window.noxiden) return;
+
+  const modifiedModel = diffEditor.getModel().modified;
+  const newContent = modifiedModel.getValue();
+
+  footerStatus.innerText = 'Applying changes to disk...';
+  const res = await window.noxiden.writeFile(activeDiffFilePath, newContent);
+
+  if (res.success) {
+    // Update standard editor if active
+    if (activeFilePath === activeDiffFilePath && normalEditor) {
+      normalEditor.setValue(newContent);
+    }
+
+    appendMessage('system', `✓ Changes accepted and applied to: ${activeDiffFilePath.split(/[\\/]/).pop()}`);
+    closeDiffReview();
+    footerStatus.innerText = 'Changes applied successfully';
+  } else {
+    footerStatus.innerText = `Failed to apply: ${res.error}`;
+  }
+});
+
+// Reject Diff
+btnRejectDiff.addEventListener('click', () => {
+  appendMessage('system', `✕ Diff review rejected for: ${activeDiffFilePath ? activeDiffFilePath.split(/[\\/]/).pop() : 'file'}`);
+  closeDiffReview();
+});
+
+// Toggle Side-by-Side / Inline view
+btnToggleSideBySide.addEventListener('click', () => {
+  if (!diffEditor) return;
+  isSideBySide = !isSideBySide;
+  diffEditor.updateOptions({ renderSideBySide: isSideBySide });
+  btnToggleSideBySide.innerText = isSideBySide ? '⇄ Toggle Inline' : '⇄ Toggle Side-by-Side';
+});
+
+// Quick Test Diff button (Activity Bar)
+btnTestDiff.addEventListener('click', () => {
+  const sampleOriginal = `// NOXiden Agent Core Service
+export class AgentService {
+  private timeoutMs = 5000;
+
+  public executeTask(taskName: string): boolean {
+    console.log("Running task:", taskName);
+    return true;
+  }
+}`;
+
+  const sampleProposed = `// NOXiden Agent Core Service
+export class AgentService {
+  private timeoutMs = 10000; // Increased timeout for deep analysis
+
+  public executeTask(taskName: string): boolean {
+    console.log("Running task with security validation:", taskName);
+    this.validateTaskSecurity(taskName);
+    return true;
+  }
+
+  private validateTaskSecurity(taskName: string): void {
+    // Validate workspace boundary and policy
+  }
+}`;
+
+  openDiffReview('src/core/agent/service.ts', sampleOriginal, sampleProposed);
 });
 
 // Render Directory Tree
@@ -93,22 +312,6 @@ function renderTree(items, container, depth = 0) {
   });
 }
 
-// Open File in Editor
-async function openFile(filePath, fileName) {
-  if (!window.noxiden) return;
-  try {
-    footerStatus.innerText = `Loading ${fileName}...`;
-    const content = await window.noxiden.readFile(filePath);
-    codeEditor.value = content;
-    activeFilePath = filePath;
-    activeTabLabel.innerText = fileName;
-    updateLineNumbers();
-    footerStatus.innerText = `Viewing: ${fileName}`;
-  } catch (err) {
-    footerStatus.innerText = `Error: ${err.message}`;
-  }
-}
-
 // Open Workspace Dialog
 btnOpenWorkspace.addEventListener('click', async () => {
   if (!window.noxiden) return;
@@ -125,11 +328,30 @@ btnOpenWorkspace.addEventListener('click', async () => {
   }
 });
 
-// Chat message rendering
-function appendMessage(role, text) {
+// Chat message rendering with Diff Proposal card
+function appendMessage(role, text, proposedDiff) {
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${role}`;
   bubble.innerText = text;
+
+  if (proposedDiff) {
+    const card = document.createElement('div');
+    card.className = 'diff-proposal-card';
+    card.innerHTML = `
+      <div class="diff-proposal-title">
+        <span>Proposed Edit</span>
+        <span style="color: var(--badge-local);">${proposedDiff.filePath}</span>
+      </div>
+      <button class="btn-review-diff">🔍 Review Side-by-Side Diff</button>
+    `;
+
+    card.querySelector('.btn-review-diff').addEventListener('click', () => {
+      openDiffReview(proposedDiff.filePath, proposedDiff.original, proposedDiff.proposed);
+    });
+
+    bubble.appendChild(card);
+  }
+
   chatHistory.appendChild(bubble);
   chatHistory.scrollTop = chatHistory.scrollHeight;
 }
@@ -154,7 +376,7 @@ async function handleSend() {
 
   try {
     const res = await window.noxiden.sendMessage(providerId, modelName, messages);
-    appendMessage('assistant', res.reply || '(Empty response)');
+    appendMessage('assistant', res.reply || '(No text content)');
     messages.push({
       id: String(Date.now()),
       role: 'assistant',
@@ -175,4 +397,3 @@ agentInput.addEventListener('keydown', (e) => {
     handleSend();
   }
 });
-
