@@ -65,6 +65,7 @@ lerna-debug.log*
 # Tauri / Electron packager outputs & caches
 src-tauri/target/
 release-builds/
+release/
 dist-electron/
 GPUCache/
 Crashpad/

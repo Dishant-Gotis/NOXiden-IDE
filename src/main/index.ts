@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { ProviderRegistry } from '../core/providers/registry';
 import { setupIpcHandlers } from './ipc';
+import { TerminalExecutor } from './terminal-executor';
 import { WorkspaceService } from './workspace-service';
 
 let mainWindow: BrowserWindow | null = null;
@@ -26,8 +27,9 @@ function createWindow(): void {
   // Services
   const workspaceService = new WorkspaceService();
   const providerRegistry = new ProviderRegistry();
+  const terminalExecutor = new TerminalExecutor(workspaceService);
 
-  setupIpcHandlers(workspaceService, providerRegistry);
+  setupIpcHandlers(workspaceService, providerRegistry, terminalExecutor);
 
   const isDev = process.env.NODE_ENV === 'development';
 

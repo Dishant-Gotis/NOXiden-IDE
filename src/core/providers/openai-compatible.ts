@@ -1,4 +1,4 @@
-import { ProviderConfig } from '../../shared/types';
+import { ProviderConfig, ToolCall } from '../../shared/types';
 import { CompletionRequest, CompletionResponse, ModelProviderAdapter } from './types';
 
 export class OpenAICompatibleAdapter implements ModelProviderAdapter {
@@ -73,15 +73,35 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
       headers['Authorization'] = `Bearer ${this.config.apiKey}`;
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       model: request.model || this.config.defaultModel,
-      messages: request.messages.map((m) => ({
-        role: m.role,
-        content: m.content
-      })),
+      messages: request.messages.map((m) => {
+        const msg: Record<string, unknown> = {
+          role: m.role,
+          content: m.content
+        };
+        if (m.toolCalls && m.toolCalls.length > 0) {
+          msg.tool_calls = m.toolCalls.map((tc) => ({
+            id: tc.id,
+            type: 'function',
+            function: {
+              name: tc.name,
+              arguments: JSON.stringify(tc.arguments)
+            }
+          }));
+        }
+        if (m.toolCallId) {
+          msg.tool_call_id = m.toolCallId;
+        }
+        return msg;
+      }),
       temperature: request.temperature ?? 0.2,
       max_tokens: request.maxTokens ?? 4096
     };
+
+    if (request.tools && request.tools.length > 0) {
+      payload.tools = request.tools;
+    }
 
     const response = await fetch(url, {
       method: 'POST',
@@ -97,18 +117,63 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
     }
 
     const json = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
+      choices?: Array<{
+        message?: {
+          content?: string;
+          tool_calls?: Array<{
+            id: string;
+            type: string;
+            function: { name: string; arguments: string };
+          }>;
+        };
+      }>;
       usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
     };
 
-    const messageContent = json.choices?.[0]?.message?.content || '';
+    const choice = json.choices?.[0]?.message;
+    const messageContent = choice?.content || '';
+
+    let parsedToolCalls: ToolCall[] | undefined;
+    if (choice?.tool_calls && choice.tool_calls.length > 0) {
+      parsedToolCalls = choice.tool_calls.map((tc) => {
+        let args = {};
+        try {
+          args = JSON.parse(tc.function.arguments);
+        } catch {
+          args = { raw: tc.function.arguments };
+        }
+        return {
+          id: tc.id,
+          name: tc.function.name,
+          arguments: args
+        };
+      });
+    }
+
+    const promptTokens = json.usage?.prompt_tokens;
+    const completionTokens = json.usage?.completion_tokens;
+    const totalTokens = json.usage?.total_tokens;
+
+    let tokensPerSec: number | undefined;
+    if (completionTokens && latencyMs > 0) {
+      tokensPerSec = Number(((completionTokens / latencyMs) * 1000).toFixed(1));
+    }
 
     return {
       content: messageContent,
-      promptTokens: json.usage?.prompt_tokens,
-      completionTokens: json.usage?.completion_tokens,
-      totalTokens: json.usage?.total_tokens,
-      latencyMs
+      toolCalls: parsedToolCalls,
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      latencyMs,
+      metrics: {
+        latencyMs,
+        tokensPerSec,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        provenance: json.usage ? 'provider_reported' : 'locally_measured'
+      }
     };
   }
 
@@ -120,4 +185,3 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
     return clean;
   }
 }
-

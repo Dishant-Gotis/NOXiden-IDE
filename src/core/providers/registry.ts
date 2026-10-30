@@ -33,8 +33,18 @@ export class ProviderRegistry {
         contextWindow: 65536
       },
       {
+        id: 'huggingface_endpoint',
+        name: 'Hugging Face Dedicated Inference Endpoint',
+        type: 'huggingface',
+        baseUrl: 'https://api-inference.huggingface.co/v1',
+        defaultModel: 'tgi',
+        availableModels: ['tgi', 'custom-lora-checkpoint'],
+        isLocal: false,
+        contextWindow: 32768
+      },
+      {
         id: 'openai_cloud',
-        name: 'OpenAI',
+        name: 'OpenAI (Cloud API)',
         type: 'openai_compatible',
         baseUrl: 'https://api.openai.com/v1',
         defaultModel: 'gpt-4o',
@@ -70,7 +80,6 @@ export class ProviderRegistry {
   }
 
   public saveProvider(config: ProviderConfig): void {
-    // If incoming config has masked key, keep existing key
     const existing = this.providers.get(config.id);
     let resolvedApiKey = config.apiKey;
     if (existing && config.apiKey && config.apiKey.startsWith('••••••••')) {
@@ -84,9 +93,7 @@ export class ProviderRegistry {
 
     this.providers.set(config.id, updatedConfig);
 
-    // Instantiate appropriate adapter
     const adapter = new OpenAICompatibleAdapter(updatedConfig);
     this.adapters.set(config.id, adapter);
   }
 }
-

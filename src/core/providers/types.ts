@@ -1,4 +1,4 @@
-import { ChatMessage, ProviderConfig, ToolCall } from '../../shared/types';
+import { ChatMessage, MetricSummary, ToolCall } from '../../shared/types';
 
 export interface CompletionRequest {
   model: string;
@@ -15,6 +15,7 @@ export interface CompletionResponse {
   completionTokens?: number;
   totalTokens?: number;
   latencyMs: number;
+  metrics: MetricSummary;
 }
 
 export interface ModelProviderAdapter {
@@ -25,4 +26,3 @@ export interface ModelProviderAdapter {
   testConnection(): Promise<{ success: boolean; latencyMs?: number; error?: string }>;
   complete(request: CompletionRequest): Promise<CompletionResponse>;
 }
-

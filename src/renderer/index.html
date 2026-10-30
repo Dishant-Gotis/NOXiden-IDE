@@ -82,7 +82,7 @@
       gap: 6px;
     }
 
-    .btn-folder {
+    .btn-folder, .btn-header {
       background: #252538;
       border: 1px solid var(--border);
       color: var(--text-main);
@@ -96,7 +96,7 @@
       transition: all 0.15s ease;
     }
 
-    .btn-folder:hover {
+    .btn-folder:hover, .btn-header:hover {
       background: var(--bg-surface-hover);
       border-color: var(--accent);
     }
@@ -147,7 +147,7 @@
 
     /* Sidebar / Explorer */
     .sidebar {
-      width: 260px;
+      width: 250px;
       background-color: var(--bg-surface);
       border-right: 1px solid var(--border);
       display: flex;
@@ -200,7 +200,29 @@
       color: var(--text-main);
     }
 
-    /* Editor Pane */
+    .git-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: auto;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .git-badge.M { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .git-badge.A { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .git-badge.D { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .git-badge.untracked { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+
+    /* Central Content Area (Editor + Terminal Drawer) */
+    .center-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
     .editor-pane {
       flex: 1;
       display: flex;
@@ -323,15 +345,93 @@
       color: var(--text-main);
       border: 1px solid var(--border);
     }
-    .btn-toggle-view:hover {
-      background-color: #3b3b55;
-    }
 
     #diffEditorWrapper {
       flex: 1;
       width: 100%;
       height: calc(100% - 42px);
       overflow: hidden;
+    }
+
+    /* Terminal Drawer (Bottom) */
+    .terminal-drawer {
+      height: 220px;
+      background-color: #101018;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: height 0.2s ease;
+    }
+
+    .terminal-drawer.collapsed {
+      height: 0px;
+      border-top: none;
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      height: 32px;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .terminal-tabs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .terminal-tab-active {
+      color: var(--text-main);
+      border-bottom: 2px solid var(--accent);
+      padding: 6px 8px;
+    }
+
+    .terminal-output {
+      flex: 1;
+      background-color: #0b0b10;
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 8px 12px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-input-bar {
+      height: 30px;
+      background-color: #151520;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 6px;
+    }
+
+    .terminal-prompt {
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .terminal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
     }
 
     /* Agent / Chat Panel */
@@ -405,15 +505,15 @@
       font-size: 11px;
     }
 
-    .diff-proposal-card {
+    .diff-proposal-card, .cmd-proposal-card {
       margin-top: 8px;
       background-color: #161622;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px 10px;
+      padding: 10px;
     }
 
-    .diff-proposal-title {
+    .diff-proposal-title, .cmd-proposal-title {
       font-weight: 600;
       color: var(--text-main);
       display: flex;
@@ -422,26 +522,40 @@
       font-size: 11px;
     }
 
-    .btn-review-diff {
-      background-color: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 4px 10px;
+    .cmd-code-block {
+      background-color: #0e0e16;
+      border: 1px solid var(--border);
       border-radius: 4px;
-      cursor: pointer;
+      padding: 6px 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .cmd-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action-small {
+      flex: 1;
+      padding: 5px;
+      border-radius: 4px;
       font-size: 11px;
       font-weight: 600;
-      width: 100%;
+      border: none;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      transition: background 0.15s ease;
+      gap: 4px;
     }
 
-    .btn-review-diff:hover {
-      background-color: var(--accent-hover);
-    }
+    .risk-safe { color: #38bdf8; }
+    .risk-standard { color: #f59e0b; }
+    .risk-high { color: #ef4444; font-weight: bold; }
 
     .agent-input-container {
       padding: 10px;
@@ -504,6 +618,86 @@
       background-color: var(--badge-local);
     }
 
+    /* Settings Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-box {
+      width: 520px;
+      background-color: #1a1a28;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 12px 16px;
+      background-color: #151522;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .modal-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-group label {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .form-input {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+    }
+
+    .modal-footer {
+      padding: 12px 16px;
+      background-color: #151522;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     /* Footer */
     footer {
       height: 24px;
@@ -529,10 +723,11 @@
       <span>No Workspace Open</span>
       <button class="btn-folder" id="btnOpenWorkspace">📂 Open Folder</button>
     </div>
-    <div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button class="btn-header" id="btnHeaderSettings">⚙️ API & Model Settings</button>
       <span class="status-badge">
         <span class="status-dot"></span>
-        <span id="connectionStatus">Monaco & Engine Ready</span>
+        <span id="connectionStatus">Engine Ready</span>
       </span>
     </div>
   </header>
@@ -541,9 +736,9 @@
     <!-- Activity Bar -->
     <div class="activity-bar">
       <button class="activity-btn active" title="Explorer">📁</button>
+      <button class="activity-btn" id="btnToggleTerminal" title="Toggle Terminal Output">⌨️</button>
       <button class="activity-btn" id="btnTestDiff" title="Test Side-by-Side Diff">⇄</button>
-      <button class="activity-btn" title="AI Agent">🤖</button>
-      <button class="activity-btn" id="btnSettings" title="Settings">⚙️</button>
+      <button class="activity-btn" id="btnActivitySettings" title="Settings">⚙️</button>
     </div>
 
     <!-- Sidebar Explorer -->
@@ -559,30 +754,54 @@
       </div>
     </div>
 
-    <!-- Central Editor Viewport -->
-    <div class="editor-pane">
-      <div class="tabs-bar" id="tabBar">
-        <div class="tab active" id="activeTabLabel">welcome.md</div>
-      </div>
-      
-      <!-- Standard Monaco Editor Container -->
-      <div id="editorContainer"></div>
+    <!-- Central Editor + Terminal Stage -->
+    <div class="center-stage">
+      <!-- Editor Viewport -->
+      <div class="editor-pane">
+        <div class="tabs-bar" id="tabBar">
+          <div class="tab active" id="activeTabLabel">welcome.md</div>
+        </div>
+        
+        <!-- Standard Monaco Editor Container -->
+        <div id="editorContainer"></div>
 
-      <!-- Side-by-Side Diff Review Container -->
-      <div id="diffReviewContainer">
-        <div class="diff-toolbar">
-          <div class="diff-info">
-            <span class="diff-badge">DIFF REVIEW</span>
-            <span style="font-weight: 600;" id="diffFileName">target-file.ts</span>
-            <span style="color: var(--text-dim);">Original (Left) ➔ Proposed (Right)</span>
+        <!-- Side-by-Side Diff Review Container -->
+        <div id="diffReviewContainer">
+          <div class="diff-toolbar">
+            <div class="diff-info">
+              <span class="diff-badge">DIFF REVIEW</span>
+              <span style="font-weight: 600;" id="diffFileName">target-file.ts</span>
+              <span style="color: var(--text-dim);">Original (Left) ➔ Proposed by Agent (Right)</span>
+            </div>
+            <div class="diff-actions">
+              <button class="btn-diff-action btn-toggle-view" id="btnToggleSideBySide">⇄ Toggle Inline</button>
+              <button class="btn-diff-action btn-reject" id="btnRejectDiff">✕ Discard</button>
+              <button class="btn-diff-action btn-accept" id="btnAcceptDiff">✓ Accept & Apply</button>
+            </div>
           </div>
-          <div class="diff-actions">
-            <button class="btn-diff-action btn-toggle-view" id="btnToggleSideBySide">⇄ Toggle Inline</button>
-            <button class="btn-diff-action btn-reject" id="btnRejectDiff">✕ Discard</button>
-            <button class="btn-diff-action btn-accept" id="btnAcceptDiff">✓ Accept & Apply</button>
+          <div id="diffEditorWrapper"></div>
+        </div>
+      </div>
+
+      <!-- Native Terminal Execution Drawer -->
+      <div class="terminal-drawer" id="terminalDrawer">
+        <div class="terminal-header">
+          <div class="terminal-tabs">
+            <span class="terminal-tab-active">⌨️ NATIVE TERMINAL</span>
+            <span style="font-size: 10px; color: var(--badge-local);" id="terminalExecStatus">READY</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button style="background:transparent; border:none; color:var(--text-dim); cursor:pointer;" id="btnClearTerminal">Clear</button>
+            <button style="background:transparent; border:none; color:var(--text-dim); cursor:pointer;" id="btnCloseTerminal">✕</button>
           </div>
         </div>
-        <div id="diffEditorWrapper"></div>
+        <div class="terminal-output" id="terminalOutput">NOXiden Native Process Shell initialized.
+Commands proposed by the agent will request explicit approval before running here.
+</div>
+        <div class="terminal-input-bar">
+          <span class="terminal-prompt">&gt;</span>
+          <input class="terminal-input" id="terminalInput" type="text" placeholder="Run shell command in workspace (Enter)..." />
+        </div>
       </div>
     </div>
 
@@ -591,38 +810,94 @@
       <div class="agent-header">
         <div class="agent-title-row">
           <span style="font-weight: 700; font-size: 13px;">🤖 NOXiden Agent</span>
-          <span style="font-size: 11px; color: var(--badge-local);" id="providerBadge">Local GPU</span>
+          <span style="font-size: 11px; color: var(--badge-local);" id="providerBadge">Ready</span>
         </div>
         <select class="model-select" id="modelSelect">
-          <option value="ollama_local:qwen2.5-coder:7b">Ollama (Local) — qwen2.5-coder:7b</option>
+          <option value="openai_cloud:gpt-4o">OpenAI — gpt-4o (Uses your API Key)</option>
           <option value="noxiden_finetuned_local:noxiden-coder-v1">Custom Fine-Tuned (Local GPU) — noxiden-coder-v1</option>
-          <option value="openai_cloud:gpt-4o">OpenAI (Cloud) — gpt-4o</option>
+          <option value="huggingface_endpoint:tgi">Hugging Face Endpoint — tgi</option>
+          <option value="ollama_local:qwen2.5-coder:7b">Ollama (Local GPU) — qwen2.5-coder:7b</option>
         </select>
       </div>
 
       <div class="agent-messages" id="chatHistory">
         <div class="chat-bubble system">
-          Monaco Editor Web Worker Engine initialized. Diff Review Mode enabled.
+          Autonomous Agent Loop active with file inspection, diff review, and terminal execution gates.
         </div>
         <div class="chat-bubble assistant">
-          Hello! I can inspect code, plan tasks, and propose edits with reviewable side-by-side diffs before writing to disk.
+          Hello! Set your API key or local model endpoint in <strong>⚙️ Settings</strong>, and ask me to inspect, edit, or test code in your workspace.
         </div>
       </div>
 
       <div class="agent-input-container">
-        <textarea class="agent-input" id="agentInput" placeholder="Ask NOXiden agent to plan, inspect files, or edit code..."></textarea>
+        <textarea class="agent-input" id="agentInput" placeholder="Ask NOXiden agent to read, edit, or test your code..."></textarea>
         <div class="agent-controls">
-          <span style="font-size: 11px; color: var(--text-dim);" id="tokenCounter">0 tokens</span>
-          <button class="btn-send" id="btnSendPrompt">Send (Enter)</button>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 11px; color: var(--text-dim);" id="tokenCounter">0 tokens</span>
+            <span style="font-size: 10px; color: var(--badge-local); display: none;" id="metricsDisplay"></span>
+          </div>
+          <button class="btn-send" id="btnSendPrompt">Run Task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal for API Keys & Endpoints -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>⚙️ Provider & API Key Settings</span>
+        <button style="background:transparent; border:none; color:#fff; cursor:pointer;" id="btnCloseSettings">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Target Provider</label>
+          <select class="form-input" id="settingProviderId">
+            <option value="openai_cloud">OpenAI (Cloud API)</option>
+            <option value="noxiden_finetuned_local">Local Fine-Tuned Model (vLLM / llama.cpp / GPU)</option>
+            <option value="huggingface_endpoint">Hugging Face Dedicated Endpoint / Inference</option>
+            <option value="ollama_local">Ollama (Local Server)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Base Endpoint URL</label>
+          <input class="form-input" id="settingBaseUrl" type="text" value="https://api.openai.com/v1" />
+        </div>
+
+        <div class="form-group">
+          <label>API Key (Saved locally, masked in UI)</label>
+          <input class="form-input" id="settingApiKey" type="password" placeholder="sk-..." />
+        </div>
+
+        <div class="form-group">
+          <label>Default Model Name</label>
+          <input class="form-input" id="settingModelName" type="text" value="gpt-4o" />
+        </div>
+
+        <div id="testResultMsg" style="font-size: 11px; margin-top: 4px; display: none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-header" id="btnTestConnection">Test Connection</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-header" id="btnCancelSettings">Cancel</button>
+          <button class="btn-send" id="btnSaveSettings">Save Configuration</button>
         </div>
       </div>
     </div>
   </div>
 
   <footer>
-    <div>NOXiden IDE v0.1.0 • Monaco Core Engine</div>
-    <div id="footerStatus">Ready</div>
-    <div>UTF-8 • Side-by-Side Review Enabled</div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <span>NOXiden IDE v0.1.0</span>
+      <span id="footerGitBranch" style="color: var(--accent); font-weight: 600; cursor: pointer;">⎇ (no git)</span>
+      <span id="footerGitStatus" style="color: var(--text-dim);">Clean</span>
+    </div>
+    <div id="footerStatus" style="display: flex; gap: 10px; align-items: center;">
+      <span>Ready</span>
+      <span id="footerMetrics" style="color: var(--badge-local); display: none;"></span>
+    </div>
+    <div>UTF-8 • Guarded Tool Execution</div>
   </footer>
 
   <!-- Monaco AMD Loader & Renderer Script -->
